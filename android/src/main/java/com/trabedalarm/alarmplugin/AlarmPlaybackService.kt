@@ -18,7 +18,7 @@ import androidx.core.app.NotificationManagerCompat
 
 class AlarmPlaybackService : Service() {
     private var mediaPlayer: MediaPlayer? = null
-    private var activeAlarmId: Int? = null
+    private var activeAlarmId: String? = null
     private val stopHandler = Handler(Looper.getMainLooper())
     private val stopAlarmRunnable = Runnable {
         val alarmId = activeAlarmId ?: return@Runnable
@@ -29,9 +29,9 @@ class AlarmPlaybackService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val alarmId = intent?.getIntExtra(EXTRA_ALARM_ID, -1) ?: -1
+        val alarmId = intent?.getStringExtra(EXTRA_ALARM_ID)
         if (intent?.action == ACTION_STOP_ALARM_PLAYBACK) {
-            if (alarmId == activeAlarmId) {
+            if (!alarmId.isNullOrBlank() && alarmId == activeAlarmId) {
                 stopHandler.removeCallbacks(stopAlarmRunnable)
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
@@ -45,7 +45,7 @@ class AlarmPlaybackService : Service() {
             DEFAULT_ALARM_DURATION_MINUTES
         ) ?: DEFAULT_ALARM_DURATION_MINUTES
 
-        if (alarmId < 0) {
+        if (alarmId.isNullOrBlank()) {
             stopSelf(startId)
             return START_NOT_STICKY
         }
@@ -69,14 +69,14 @@ class AlarmPlaybackService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun startAlarmForeground(alarmId: Int, message: String) {
+    private fun startAlarmForeground(alarmId: String, message: String) {
         val dismissIntent = Intent(this, DismissAlarmReceiver::class.java).apply {
             action = ACTION_DISMISS_ALARM
             putExtra(EXTRA_ALARM_ID, alarmId)
         }
         val dismissPendingIntent = PendingIntent.getBroadcast(
             this,
-            alarmId,
+            requestCodeFor(alarmId),
             dismissIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )

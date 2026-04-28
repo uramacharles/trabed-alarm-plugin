@@ -7,14 +7,14 @@ import androidx.core.content.ContextCompat
 
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val alarmId = intent.getIntExtra(EXTRA_ALARM_ID, -1)
+        val alarmId = intent.getStringExtra(EXTRA_ALARM_ID)
         val msg = intent.getStringExtra(EXTRA_ALARM_MESSAGE) ?: "Alarm Triggered!"
         val durationMinutes = intent.getIntExtra(
             EXTRA_ALARM_DURATION_MINUTES,
             DEFAULT_ALARM_DURATION_MINUTES
         )
 
-        if (alarmId < 0) {
+        if (alarmId.isNullOrBlank()) {
             return
         }
 

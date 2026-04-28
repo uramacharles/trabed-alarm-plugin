@@ -16,18 +16,14 @@ class AlarmPlugin {
     }
 
     fun setAlarm(context: Context, call: PluginCall) {
-        val alarmId = call.getInt("id") ?: return call.reject("Alarm id is required")
+        val alarmId = call.getString("id")?.trim().takeUnless { it.isNullOrEmpty() }
+            ?: return call.reject("Alarm id is required")
         val time = call.getLong("time") ?: return call.reject("Time is required")
         val message = call.getString("message") ?: "Alarm!"
         val requestedDurationMinutes = call.getInt("durationMinutes")
         val durationMinutes = requestedDurationMinutes
             ?.takeIf { it > 0 }
             ?: DEFAULT_ALARM_DURATION_MINUTES
-
-        if (alarmId < 0) {
-            call.reject("Alarm id must be 0 or greater")
-            return
-        }
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, AlarmReceiver::class.java).apply {
@@ -38,7 +34,7 @@ class AlarmPlugin {
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            alarmId,
+            requestCodeFor(alarmId),
             intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
@@ -63,19 +59,15 @@ class AlarmPlugin {
     }
 
     fun cancelAlarm(context: Context, call: PluginCall) {
-        val alarmId = call.getInt("id") ?: return call.reject("Alarm id is required")
-
-        if (alarmId < 0) {
-            call.reject("Alarm id must be 0 or greater")
-            return
-        }
+        val alarmId = call.getString("id")?.trim().takeUnless { it.isNullOrEmpty() }
+            ?: return call.reject("Alarm id is required")
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
         val intent = Intent(context, AlarmReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            alarmId,
+            requestCodeFor(alarmId),
             intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
@@ -100,7 +92,7 @@ class AlarmPlugin {
             val intent = Intent(context, AlarmReceiver::class.java)
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
-                alarmId,
+                requestCodeFor(alarmId),
                 intent,
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
@@ -119,17 +111,17 @@ class AlarmPlugin {
         call.resolve()
     }
 
-    private fun saveAlarmId(context: Context, alarmId: Int) {
+    private fun saveAlarmId(context: Context, alarmId: String) {
         val prefs = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
         val updatedIds = prefs.getStringSet(alarmIdsKey, emptySet()).orEmpty().toMutableSet()
-        updatedIds.add(alarmId.toString())
+        updatedIds.add(alarmId)
         prefs.edit().putStringSet(alarmIdsKey, updatedIds).apply()
     }
 
-    private fun removeAlarmId(context: Context, alarmId: Int) {
+    private fun removeAlarmId(context: Context, alarmId: String) {
         val prefs = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
         val updatedIds = prefs.getStringSet(alarmIdsKey, emptySet()).orEmpty().toMutableSet()
-        updatedIds.remove(alarmId.toString())
+        updatedIds.remove(alarmId)
         prefs.edit().putStringSet(alarmIdsKey, updatedIds).apply()
     }
 
@@ -140,11 +132,10 @@ class AlarmPlugin {
             .apply()
     }
 
-    private fun getAlarmIds(context: Context): Set<Int> {
+    private fun getAlarmIds(context: Context): Set<String> {
         return context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
             .getStringSet(alarmIdsKey, emptySet())
             .orEmpty()
-            .mapNotNull { it.toIntOrNull() }
             .toSet()
     }
 }

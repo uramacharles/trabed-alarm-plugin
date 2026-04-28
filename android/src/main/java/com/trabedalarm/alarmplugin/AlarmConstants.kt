@@ -10,6 +10,10 @@ const val EXTRA_ALARM_ID = "alarmId"
 const val EXTRA_ALARM_MESSAGE = "message"
 const val EXTRA_ALARM_DURATION_MINUTES = "durationMinutes"
 
-fun notificationIdFor(alarmId: Int): Int {
-    return ALARM_NOTIFICATION_ID_BASE + alarmId
+fun requestCodeFor(alarmId: String): Int {
+    return alarmId.hashCode()
+}
+
+fun notificationIdFor(alarmId: String): Int {
+    return ALARM_NOTIFICATION_ID_BASE + (alarmId.hashCode() and 0x0FFFFFFF)
 }

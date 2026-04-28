@@ -2,7 +2,7 @@ import { WebPlugin } from '@capacitor/core';
 import type { AlarmPluginPlugin } from './definitions';
 
 type AlarmOptions = {
-  id: number;
+  id: string;
   time: number;
   message: string;
   durationMinutes?: number;
@@ -25,8 +25,8 @@ type ActiveAlarm = {
 const DEFAULT_ALARM_DURATION_MINUTES = 3;
 
 export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
-  private scheduledAlarms = new Map<number, ScheduledAlarm>();
-  private activeAlarms = new Map<number, ActiveAlarm>();
+  private scheduledAlarms = new Map<string, ScheduledAlarm>();
+  private activeAlarms = new Map<string, ActiveAlarm>();
 
   async echo(options: { value: string }): Promise<{ value: string }> {
     console.log('ECHO (web):', options);
@@ -40,8 +40,8 @@ export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
         ? options.durationMinutes
         : DEFAULT_ALARM_DURATION_MINUTES;
 
-    if (!Number.isInteger(id) || id < 0) {
-      throw new Error('Alarm id must be a non-negative integer');
+    if (typeof id !== 'string' || id.trim().length === 0) {
+      throw new Error('Alarm id must be a non-empty string');
     }
 
     if (!Number.isFinite(time) || time <= Date.now()) {
@@ -63,7 +63,7 @@ export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
     });
   }
 
-  async cancelAlarm(options: { id: number }): Promise<void> {
+  async cancelAlarm(options: { id: string }): Promise<void> {
     this.cancelAlarmInternal(options.id);
   }
 
@@ -73,7 +73,7 @@ export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
   }
 
   private async triggerAlarm(
-    id: number,
+    id: string,
     message: string,
     durationMinutes: number,
   ): Promise<void> {
@@ -81,7 +81,7 @@ export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
       this.stopAlarm(id);
     }
 
-    const notification = await this.showNotification(message);
+    const notification = await this.showNotification(id, message);
     const audio = this.startWebTone();
     const stopTimeoutId = window.setTimeout(() => {
       this.stopAlarm(id);
@@ -96,7 +96,7 @@ export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
     });
   }
 
-  private async showNotification(message: string): Promise<Notification | null> {
+  private async showNotification(id: string, message: string): Promise<Notification | null> {
     if (typeof Notification === 'undefined') {
       console.warn('Browser notifications are not available.');
       return null;
@@ -115,7 +115,7 @@ export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
     return new Notification('Alarm', {
       body: message,
       requireInteraction: true,
-      tag: `trabed-alarm-${Date.now()}`,
+      tag: `trabed-alarm-${id}`,
     });
   }
 
@@ -159,7 +159,7 @@ export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
     }
   }
 
-  private stopAlarm(id: number): void {
+  private stopAlarm(id: string): void {
     const activeAlarm = this.activeAlarms.get(id);
     if (!activeAlarm) {
       return;
@@ -184,7 +184,7 @@ export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
     this.activeAlarms.delete(id);
   }
 
-  private cancelAlarmInternal(id: number): void {
+  private cancelAlarmInternal(id: string): void {
     const scheduledAlarm = this.scheduledAlarms.get(id);
     if (scheduledAlarm) {
       window.clearTimeout(scheduledAlarm.timeoutId);

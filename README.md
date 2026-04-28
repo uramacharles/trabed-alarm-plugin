@@ -41,12 +41,12 @@ echo(options: { value: string; }) => Promise<{ value: string; }>
 ### setAlarm(...)
 
 ```typescript
-setAlarm(options: { id: number; time: number; message: string; durationMinutes?: number; }) => Promise<void>
+setAlarm(options: { id: string; time: number; message: string; durationMinutes?: number; }) => Promise<void>
 ```
 
 | Param         | Type                                                                                  |
 | ------------- | ------------------------------------------------------------------------------------- |
-| **`options`** | <code>{ id: number; time: number; message: string; durationMinutes?: number; }</code> |
+| **`options`** | <code>{ id: string; time: number; message: string; durationMinutes?: number; }</code> |
 
 --------------------
 
@@ -54,12 +54,12 @@ setAlarm(options: { id: number; time: number; message: string; durationMinutes?:
 ### cancelAlarm(...)
 
 ```typescript
-cancelAlarm(options: { id: number; }) => Promise<void>
+cancelAlarm(options: { id: string; }) => Promise<void>
 ```
 
 | Param         | Type                         |
 | ------------- | ---------------------------- |
-| **`options`** | <code>{ id: number; }</code> |
+| **`options`** | <code>{ id: string; }</code> |
 
 --------------------
 

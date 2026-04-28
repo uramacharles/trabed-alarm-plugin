@@ -25,7 +25,7 @@ public class AlarmPluginPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func setAlarm(_ call: CAPPluginCall) {
-        guard let id = call.getInt("id") else {
+        guard let id = call.getString("id"), !id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             call.reject("Alarm id is required")
             return
         }
@@ -49,7 +49,7 @@ public class AlarmPluginPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func cancelAlarm(_ call: CAPPluginCall) {
-        guard let id = call.getInt("id") else {
+        guard let id = call.getString("id"), !id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             call.reject("Alarm id is required")
             return
         }

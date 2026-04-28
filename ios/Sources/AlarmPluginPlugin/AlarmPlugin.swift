@@ -11,13 +11,13 @@ import UserNotifications
     private let identifierPrefix = "trabed_alarm_"
 
     @objc public func setAlarm(
-        id: Int,
+        id: String,
         time: Double,
         message: String,
         durationMinutes: Int,
         completion: @escaping (Error?) -> Void
     ) {
-        if id < 0 {
+        if id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             completion(AlarmPluginError.invalidAlarmId)
             return
         }
@@ -66,7 +66,7 @@ import UserNotifications
         }
     }
 
-    @objc public func cancelAlarm(id: Int, completion: @escaping () -> Void) {
+    @objc public func cancelAlarm(id: String, completion: @escaping () -> Void) {
         let identifier = alarmIdentifier(for: id)
         notificationCenter.removePendingNotificationRequests(withIdentifiers: [identifier])
         notificationCenter.removeDeliveredNotifications(withIdentifiers: [identifier])
@@ -91,7 +91,7 @@ import UserNotifications
     }
 
     private func scheduleNotification(
-        id: Int,
+        id: String,
         fireDate: Date,
         message: String,
         durationMinutes: Int,
@@ -122,7 +122,7 @@ import UserNotifications
         }
     }
 
-    private func alarmIdentifier(for id: Int) -> String {
+    private func alarmIdentifier(for id: String) -> String {
         "\(identifierPrefix)\(id)"
     }
 }
@@ -135,7 +135,7 @@ enum AlarmPluginError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidAlarmId:
-            return "Alarm id must be 0 or greater"
+            return "Alarm id must be a non-empty string"
         case .timeMustBeInFuture:
             return "Time must be in the future"
         case .notificationsNotAllowed:

@@ -7,8 +7,8 @@ import androidx.core.app.NotificationManagerCompat
 
 class DismissAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        val alarmId = intent.getIntExtra(EXTRA_ALARM_ID, -1)
-        if (alarmId < 0) {
+        val alarmId = intent.getStringExtra(EXTRA_ALARM_ID)
+        if (alarmId.isNullOrBlank()) {
             return
         }
 
