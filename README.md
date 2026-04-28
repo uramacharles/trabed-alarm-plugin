@@ -11,9 +11,65 @@ npx cap sync
 
 ## API
 
-<docgen-index></docgen-index>
+<docgen-index>
+
+* [`echo(...)`](#echo)
+* [`setAlarm(...)`](#setalarm)
+* [`cancelAlarm(...)`](#cancelalarm)
+* [`cancelAllAlarms()`](#cancelallalarms)
+
+</docgen-index>
 
 <docgen-api>
-<!-- run docgen to generate docs from the source -->
-<!-- More info: https://github.com/ionic-team/capacitor-docgen -->
+<!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
+
+### echo(...)
+
+```typescript
+echo(options: { value: string; }) => Promise<{ value: string; }>
+```
+
+| Param         | Type                            |
+| ------------- | ------------------------------- |
+| **`options`** | <code>{ value: string; }</code> |
+
+**Returns:** <code>Promise&lt;{ value: string; }&gt;</code>
+
+--------------------
+
+
+### setAlarm(...)
+
+```typescript
+setAlarm(options: { id: number; time: number; message: string; durationMinutes?: number; }) => Promise<void>
+```
+
+| Param         | Type                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------- |
+| **`options`** | <code>{ id: number; time: number; message: string; durationMinutes?: number; }</code> |
+
+--------------------
+
+
+### cancelAlarm(...)
+
+```typescript
+cancelAlarm(options: { id: number; }) => Promise<void>
+```
+
+| Param         | Type                         |
+| ------------- | ---------------------------- |
+| **`options`** | <code>{ id: number; }</code> |
+
+--------------------
+
+
+### cancelAllAlarms()
+
+```typescript
+cancelAllAlarms() => Promise<void>
+```
+
+--------------------
+
 </docgen-api>
