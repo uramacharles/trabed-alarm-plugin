@@ -1,4 +1,5 @@
 import { WebPlugin } from '@capacitor/core';
+
 import type { AlarmPluginPlugin } from './definitions';
 
 type AlarmOptions = {
@@ -25,6 +26,22 @@ type ActiveAlarm = {
 const DEFAULT_ALARM_DURATION_MINUTES = 3;
 
 export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
+  async checkExactAlarmPermission(): Promise<{ granted: boolean }> {
+    throw this.unimplemented('Exact alarm permission is only available on Android.');
+  }
+
+  async requestExactAlarmPermission(): Promise<{ granted: boolean }> {
+    throw this.unimplemented('Exact alarm permission is only available on Android.');
+  }
+
+  async checkNotificationPermission(): Promise<{ granted: boolean }> {
+    throw this.unimplemented('This permission method is only available on Android.');
+  }
+
+  async requestNotificationPermission(): Promise<{ granted: boolean }> {
+    throw this.unimplemented('This permission method is only available on Android.');
+  }
+
   private scheduledAlarms = new Map<string, ScheduledAlarm>();
   private activeAlarms = new Map<string, ActiveAlarm>();
 
@@ -72,11 +89,7 @@ export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
     Array.from(this.activeAlarms.keys()).forEach((id) => this.stopAlarm(id));
   }
 
-  private async triggerAlarm(
-    id: string,
-    message: string,
-    durationMinutes: number,
-  ): Promise<void> {
+  private async triggerAlarm(id: string, message: string, durationMinutes: number): Promise<void> {
     if (this.activeAlarms.has(id)) {
       this.stopAlarm(id);
     }
@@ -119,16 +132,14 @@ export class AlarmPluginWeb extends WebPlugin implements AlarmPluginPlugin {
     });
   }
 
-  private startWebTone():
-    | {
-        audioContext: AudioContext;
-        oscillator: OscillatorNode;
-        gainNode: GainNode;
-      }
-    | null {
+  private startWebTone(): {
+    audioContext: AudioContext;
+    oscillator: OscillatorNode;
+    gainNode: GainNode;
+  } | null {
     const AudioContextCtor =
       window.AudioContext ||
-      ((window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 
     if (!AudioContextCtor) {
       console.warn('Web Audio API is not available for alarm tone playback.');

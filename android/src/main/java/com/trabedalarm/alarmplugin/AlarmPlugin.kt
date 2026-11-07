@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import com.getcapacitor.PluginCall
 
@@ -20,16 +21,16 @@ class AlarmPlugin {
             ?: return call.reject("Alarm id is required")
         val time = call.getLong("time") ?: return call.reject("Time is required")
         val message = call.getString("message") ?: "Alarm!"
-        val requestedDurationMinutes = call.getInt("durationMinutes")
-        val durationMinutes = requestedDurationMinutes
-            ?.takeIf { it > 0 }
-            ?: DEFAULT_ALARM_DURATION_MINUTES
+
+        if (time <= System.currentTimeMillis()) {
+            call.reject("Time must be in the future")
+            return
+        }
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra(EXTRA_ALARM_ID, alarmId)
             putExtra(EXTRA_ALARM_MESSAGE, message)
-            putExtra(EXTRA_ALARM_DURATION_MINUTES, durationMinutes)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(
@@ -39,20 +40,7 @@ class AlarmPlugin {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        if (time <= System.currentTimeMillis()) {
-            call.reject("Time must be in the future")
-            return
-        }
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            if (!alarmManager.canScheduleExactAlarms()) {
-                call.reject("Exact alarms are not allowed on this device/app")
-                return
-            }
-        }
-
-
-        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent)
+        scheduleAlarm(alarmManager, time, pendingIntent)
         saveAlarmId(context, alarmId)
 
         call.resolve()
@@ -74,12 +62,6 @@ class AlarmPlugin {
 
         alarmManager.cancel(pendingIntent)
         NotificationManagerCompat.from(context).cancel(notificationIdFor(alarmId))
-        context.startService(
-            Intent(context, AlarmPlaybackService::class.java).apply {
-                action = ACTION_STOP_ALARM_PLAYBACK
-                putExtra(EXTRA_ALARM_ID, alarmId)
-            }
-        )
         removeAlarmId(context, alarmId)
         call.resolve()
     }
@@ -99,16 +81,22 @@ class AlarmPlugin {
 
             alarmManager.cancel(pendingIntent)
             NotificationManagerCompat.from(context).cancel(notificationIdFor(alarmId))
-            context.startService(
-                Intent(context, AlarmPlaybackService::class.java).apply {
-                    action = ACTION_STOP_ALARM_PLAYBACK
-                    putExtra(EXTRA_ALARM_ID, alarmId)
-                }
-            )
         }
 
         clearAlarmIds(context)
         call.resolve()
+    }
+
+    private fun scheduleAlarm(alarmManager: AlarmManager, time: Long, pendingIntent: PendingIntent) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()) {
+            try {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent)
+                return
+            } catch (_: SecurityException) {
+                // Access may have been revoked between the check and scheduling.
+            }
+        }
+        alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent)
     }
 
     private fun saveAlarmId(context: Context, alarmId: String) {

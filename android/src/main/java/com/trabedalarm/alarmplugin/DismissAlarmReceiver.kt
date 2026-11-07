@@ -13,12 +13,6 @@ class DismissAlarmReceiver : BroadcastReceiver() {
         }
 
         NotificationManagerCompat.from(context).cancel(notificationIdFor(alarmId))
-        context.startService(
-            Intent(context, AlarmPlaybackService::class.java).apply {
-                action = ACTION_STOP_ALARM_PLAYBACK
-                putExtra(EXTRA_ALARM_ID, alarmId)
-            }
-        )
         removeTrackedAlarmId(context, alarmId)
     }
 }

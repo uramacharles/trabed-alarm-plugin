@@ -1,6 +1,6 @@
 {
   "name": "trabed-alarm-plugin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "This is an alarm system that tends to interact with react apps and set alarms for users",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
