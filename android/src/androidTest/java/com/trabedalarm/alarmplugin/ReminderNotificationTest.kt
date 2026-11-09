@@ -127,6 +127,40 @@ class ReminderNotificationTest {
         assertTrue(preferences.getStringSet("scheduled_alarm_ids", emptySet())!!.contains("approximate"))
     }
 
+    @Test
+    fun restartSetsFutureAlarmsAgainAndForgetsOldOnes() {
+        val call = RecordingCall(JSObject()
+            .put("id", "after_restart")
+            .put("time", System.currentTimeMillis() + 3_600_000L)
+            .put("message", "Still due after a restart"))
+        implementation.setAlarm(context, call)
+        assertTrue(call.resolved)
+        assertTrue(savedAlarms(context).any { it.id == "after_restart" && it.message == "Still due after a restart" })
+        trackAlarm(context, "long_gone", System.currentTimeMillis() - 2 * 3_600_000L, "Missed long ago")
+
+        // A restart: Android drops the alarm (the pending intent goes with it).
+        val alarms = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val pending = alarmPendingIntent(context, "after_restart", null)
+        alarms.cancel(pending)
+        pending.cancel()
+
+        BootReceiver().onReceive(context, Intent(Intent.ACTION_BOOT_COMPLETED))
+
+        val again = android.app.PendingIntent.getBroadcast(context, requestCodeFor("after_restart"),
+            Intent(context, AlarmReceiver::class.java),
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_NO_CREATE)
+        assertNotNull(again)
+        assertFalse(savedAlarms(context).any { it.id == "long_gone" })
+        assertFalse(trackedAlarmIds(context).contains("long_gone"))
+    }
+
+    @Test
+    fun aRungAlarmIsNotSetAgainAfterARestart() {
+        trackAlarm(context, "rang", System.currentTimeMillis() + 60_000L, "Rings once")
+        post("rang")
+        assertFalse(savedAlarms(context).any { it.id == "rang" })
+    }
+
     private fun post(id: String) {
         assumeTrue(NotificationManagerCompat.from(context).areNotificationsEnabled())
         AlarmReceiver().onReceive(context, Intent()

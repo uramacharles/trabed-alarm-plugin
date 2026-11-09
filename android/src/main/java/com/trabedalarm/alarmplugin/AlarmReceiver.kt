@@ -22,6 +22,8 @@ class AlarmReceiver : BroadcastReceiver() {
         if (alarmId.isNullOrBlank()) {
             return
         }
+        // It has rung (or can't): don't set it again after a restart.
+        forgetAlarmTime(context, alarmId)
 
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled() ||
